@@ -3,301 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Apps Observability Dashboard</title>
+    <title>AI Apps Observability (Dynamic)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --header-bg: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-warning: #f59e0b;
+            --bg-color: #0f172a; --card-bg: #1e293b; --header-bg: #1e293b;
+            --text-primary: #f1f5f9; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-purple: #8b5cf6;
+            --accent-green: #10b981; --accent-red: #ef4444; --accent-warning: #f59e0b;
             --border-color: #334155;
-            --input-bg: #0f172a;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            outline: none;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden; /* Prevent body horizontal scroll */
-        }
-
-        /* --- Scrollbar Styling --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-color); }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-        /* --- Header --- */
-        header {
-            background-color: var(--header-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
+        /* Header */
+        header { background-color: var(--header-bg); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .logo-box { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: white; margin-right: 16px; }
+        .live-badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-green); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 8px; text-transform: uppercase; margin-left: 20px;}
+        .status-dot { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 100% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } }
 
-        .brand-section { display: flex; align-items: center; gap: 16px; }
+        .persona-selector { background-color: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 4px; display: flex; gap: 4px; }
+        .persona-btn { background: transparent; border: none; color: var(--text-secondary); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+        .persona-btn.active { background-color: #334155; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-        .logo-box {
-            width: 40px; height: 40px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.2rem; color: white;
-        }
-
-        .live-badge {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: var(--accent-green);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600;
-            display: flex; align-items: center; gap: 8px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        
-        .status-dot {
-            width: 8px; height: 8px;
-            background-color: var(--accent-green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            100% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-        }
-
-        .persona-selector {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 4px;
-            display: flex; gap: 4px;
-        }
-
-        .persona-btn {
-            background: transparent; border: none;
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem; font-weight: 500;
-            transition: all 0.2s;
-        }
-        .persona-btn.active {
-            background-color: #334155;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        /* --- Controls & Filters --- */
-        .controls-bar {
-            padding: 2rem 2rem 0 2rem;
-            display: flex; gap: 1rem;
-            align-items: center; flex-wrap: wrap;
-        }
-
-        .input-wrapper { position: relative; }
-        .search-icon {
-            position: absolute; left: 12px; top: 50%;
-            transform: translateY(-50%); color: var(--text-secondary);
-        }
-
-        input[type="text"], select {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-        }
-        input[type="text"] { padding-left: 36px; width: 260px; }
-        input:focus, select:focus { border-color: var(--accent-blue); }
-
-        /* --- KPIs --- */
-        .kpi-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            padding: 2rem;
-        }
-
-        .kpi-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            display: flex; flex-direction: column;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .kpi-title {
-            color: var(--text-secondary);
-            font-size: 0.75rem; text-transform: uppercase;
-            font-weight: 600; letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
+        /* KPIs */
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 2rem; }
+        .kpi-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: opacity 0.3s; }
+        .kpi-title { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; }
         .kpi-value { font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 4px; }
-        .kpi-sub { font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
-
-        /* --- Main Layout Grid --- */
-        .dashboard-grid {
-            display: grid;
-            /* 3fr for table, 1.2fr for details - Balanced */
-            grid-template-columns: 3fr 1.2fr;
-            gap: 2rem;
-            padding: 0 2rem 4rem 2rem;
-            align-items: start;
-        }
-
-        /* Responsive Breakpoint */
-        @media (max-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr; /* Stack vertically on small screens */
-            }
-            .details-wrapper {
-                position: static !important; /* Remove sticky on mobile */
-                margin-top: 1rem;
-            }
-        }
-
-        /* --- Matrix Section (Table) --- */
-        .matrix-section {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: flex; flex-direction: column;
-            width: 100%; /* Ensure it fits the grid cell */
-        }
-
-        .table-scroll-wrapper {
-            width: 100%;
-            overflow-x: auto; /* Enable horizontal scroll ONLY for table */
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            width: 100%;
-            min-width: 850px; /* Force scrollbar if container is smaller than this */
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        thead { background-color: #253248; }
         
-        th {
-            text-align: left; padding: 1rem 1.25rem;
-            color: var(--text-secondary); font-weight: 600;
-            border-bottom: 1px solid var(--border-color);
-            white-space: nowrap;
-        }
+        /* Layout */
+        .dashboard-grid { display: grid; grid-template-columns: 3fr 1.2fr; gap: 2rem; padding: 0 2rem 4rem 2rem; align-items: start; }
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr; } .details-wrapper { position: static !important; margin-top: 1rem; } }
 
-        td {
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-            white-space: nowrap; /* Prevent ugly wrapping */
-        }
-
-        tr:last-child td { border-bottom: none; }
+        /* Matrix */
+        .matrix-section { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; width: 100%; position: relative; min-height: 200px; }
+        .table-scroll-wrapper { width: 100%; overflow-x: auto; }
+        table { width: 100%; min-width: 850px; border-collapse: collapse; font-size: 0.9rem; }
+        thead { background-color: #253248; }
+        th { text-align: left; padding: 1rem 1.25rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap; }
         tr:hover { background-color: rgba(59, 130, 246, 0.05); cursor: pointer; }
-        tr.selected-row {
-            background-color: rgba(59, 130, 246, 0.15);
-            border-left: 3px solid var(--accent-blue);
-        }
-
-        .app-cell { display: flex; align-items: center; gap: 12px; }
-        .app-icon {
-            width: 32px; height: 32px;
-            background-color: #334155; border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; color: white; font-weight: 700;
-        }
-
-        /* --- Sticky Details Panel --- */
-        .details-wrapper {
-            position: sticky;
-            top: 100px; /* Stick below header */
-            height: fit-content;
-        }
-
-        .details-panel {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            display: flex; flex-direction: column; gap: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-        }
-
-        .logs-box {
-            background-color: #0b1120;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'Courier New', monospace;
-            font-size: 0.8rem;
-            height: 200px; overflow-y: auto;
-            color: #cbd5e1;
-        }
-        .log-item { margin-bottom: 8px; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
-        .log-ts { color: #64748b; margin-right: 8px; }
-
+        tr.selected-row { background-color: rgba(59, 130, 246, 0.15); border-left: 3px solid var(--accent-blue); }
+        
         /* Helpers */
         .financial-element { transition: opacity 0.3s; }
         .financial-hidden { display: none !important; }
-        
-        .status-pill {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 10px; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600;
-        }
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .st-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
         .st-warn { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
         .st-crit { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+        
+        /* Loading Overlay */
+        .loading-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); display: flex; align-items: center; justify-content: center; z-index: 10; font-weight: 500; color: var(--accent-blue); backdrop-filter: blur(2px); transition: opacity 0.3s; pointer-events: none; opacity: 0; }
+        .loading-active { opacity: 1; pointer-events: all; }
+
+        /* Details Panel */
+        .details-wrapper { position: sticky; top: 100px; height: fit-content; }
+        .details-panel { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        .logs-box { background-color: #0b1120; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 0.8rem; height: 200px; overflow-y: auto; color: #cbd5e1; }
+        .log-item { margin-bottom: 8px; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
 
     </style>
 </head>
 <body>
 
     <header>
-        <div class="brand-section">
+        <div style="display:flex; align-items:center;">
             <div class="logo-box">AI</div>
             <div>
                 <h1 style="font-size: 1.1rem; font-weight: 600;">AI Apps Observability</h1>
-                <div style="font-size: 0.8rem; color: var(--text-secondary);">Operational Health Monitor</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Dynamic Data Stream</div>
             </div>
-            <div class="live-badge" style="margin-left: 20px;">
-                <div class="status-dot"></div> Live
+            <div class="live-badge">
+                <div class="status-dot"></div> Live API
+            </div>
+            <div style="margin-left: 15px; font-size: 0.75rem; color: var(--text-secondary);" id="lastUpdated">
+                Last update: --
             </div>
         </div>
         
@@ -307,64 +98,20 @@
         </div>
     </header>
 
-    <div class="controls-bar">
-        <div class="input-wrapper">
-            <i class="ph ph-magnifying-glass search-icon"></i>
-            <input type="text" id="searchInput" placeholder="Search Application..." onkeyup="filterData()">
-        </div>
-        
-        <select id="techFilter" onchange="filterData()">
-            <option value="All">All Technologies</option>
-            <option value="LLM">Generative AI (LLM)</option>
-            <option value="ML">Traditional ML</option>
-            <option value="RAG">RAG System</option>
-        </select>
-
-        <select id="dateFilter" onchange="simulateDateUpdate()">
-            <option>Last 24 Hours</option>
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-        </select>
-    </div>
-
-    <div class="kpi-container">
-        <div class="kpi-card">
-            <div class="kpi-title">Total Inferences</div>
-            <div class="kpi-value">4.2M</div>
-            <div class="kpi-sub" style="color:var(--accent-green);">▲ 8.4% vs last period</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Avg Latency (P95)</div>
-            <div class="kpi-value">520ms</div>
-            <div class="kpi-sub" style="color:var(--accent-green);">▼ 12ms improvement</div>
-        </div>
-        <div class="kpi-card financial-element financial-hidden">
-            <div class="kpi-title">Projected Cost</div>
-            <div class="kpi-value">$18,240</div>
-            <div class="kpi-sub" style="color:var(--accent-warning);">▲ 2% Over Budget</div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Error Rate</div>
-            <div class="kpi-value">0.12%</div>
-            <div class="kpi-sub" style="color:var(--text-secondary);">Stable</div>
-        </div>
+    <div class="kpi-container" id="kpiContainer">
+        <div style="color:var(--text-secondary);">Connecting to metrics stream...</div>
     </div>
 
     <div class="dashboard-grid">
-        
         <div class="matrix-section">
+            <div class="loading-overlay" id="tableLoader">
+                <i class="ph ph-spinner ph-spin" style="margin-right:8px;"></i> Fetching Data...
+            </div>
             <div class="table-scroll-wrapper">
                 <table id="appsTable">
                     <thead>
-                        <tr>
-                            <th>Application Name</th>
-                            <th>Status</th>
-                            <th>Technology</th>
-                            <th>Latency</th>
-                            <th>Requests</th>
-                            <th>Drift</th>
-                            <th class="financial-element financial-hidden">Cost (24h)</th>
-                        </tr>
+                        <tr id="tableHeaderRow">
+                            </tr>
                     </thead>
                     <tbody id="tableBody">
                         </tbody>
@@ -375,18 +122,18 @@
         <div class="details-wrapper">
             <div class="details-panel">
                 <div style="border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
-                    <h2 id="detailName" style="font-size: 1.1rem; margin-bottom: 4px;">Loading...</h2>
+                    <h2 id="detailName" style="font-size: 1.1rem; margin-bottom: 4px;">--</h2>
                     <div id="detailMeta" style="color: var(--text-secondary); font-size:0.85rem;">Select an app</div>
                 </div>
 
                 <div>
-                    <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Real-time Performance</h3>
+                    <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Live Latency</h3>
                     <div style="height: 150px; width: 100%;">
                         <canvas id="latencyChart"></canvas>
                     </div>
                 </div>
 
-                <div class="financial-element financial-hidden">
+                <div class="financial-element financial-hidden" id="costChartContainer">
                     <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Cost Analysis</h3>
                     <div style="height: 140px; width: 100%;">
                         <canvas id="costChart"></canvas>
@@ -396,186 +143,271 @@
                 <div style="display: flex; flex-direction: column; flex: 1;">
                     <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Live Logs</h3>
                     <div class="logs-box" id="logsContainer">
-                        </div>
+                        <div class="log-item">Waiting for data selection...</div>
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // --- Data ---
-        const appsData = [
-            { id: 1, name: "Policy CoPilot", tech: "LLM", model: "GPT-4o", status: "Healthy", latency: "850ms", reqs: "1.2M", drift: 0.02, cost: "$420.00", logs: ["Query sanitized", "Context window at 40%", "Response generated"] },
-            { id: 2, name: "Claims Assistant", tech: "RAG", model: "Claude 3.5", status: "Warning", latency: "2.1s", reqs: "450k", drift: 0.15, cost: "$280.50", logs: ["High latency in retrieval", "Vector DB slow response"] },
-            { id: 3, name: "Fraud Detector", tech: "ML", model: "XGBoost", status: "Critical", latency: "120ms", reqs: "8.5M", drift: 0.45, cost: "$80.00", logs: ["CRITICAL: Drift > 0.4", "Model confidence low"] },
-            { id: 4, name: "Amazon Q Biz", tech: "LLM", model: "Titan", status: "Healthy", latency: "400ms", reqs: "300k", drift: 0.05, cost: "$150.00", logs: ["Sync complete", "Token usage stable"] },
-            { id: 5, name: "Quote Engine", tech: "ML", model: "AutoML", status: "Healthy", latency: "90ms", reqs: "5.1M", drift: 0.01, cost: "$220.00", logs: ["Inference batch complete"] },
-            { id: 6, name: "LangChain Agent", tech: "RAG", model: "GPT-3.5", status: "Healthy", latency: "1.1s", reqs: "600k", drift: 0.09, cost: "$95.00", logs: ["Tool: Calculator used", "Tool: Weather used"] },
-            { id: 7, name: "Underwriting AI", tech: "ML", model: "Custom", status: "Healthy", latency: "300ms", reqs: "200k", drift: 0.03, cost: "$110.00", logs: ["Risk score calculated"] },
-            { id: 8, name: "Email Classifier", tech: "LLM", model: "BERT", status: "Healthy", latency: "60ms", reqs: "2.2M", drift: 0.01, cost: "$40.00", logs: ["Email routed to Claims"] },
-            { id: 9, name: "Image Analysis", tech: "ML", model: "ResNet", status: "Warning", latency: "3.5s", reqs: "50k", drift: 0.12, cost: "$600.00", logs: ["GPU utilization 99%", "Queue depth increasing"] },
-            { id: 10, name: "Chat Support", tech: "LLM", model: "Llama 3", status: "Healthy", latency: "500ms", reqs: "800k", drift: 0.04, cost: "$120.00", logs: ["Session ended", "Sentiment: Positive"] },
-            { id: 11, name: "Doc Summarizer", tech: "LLM", model: "GPT-4", status: "Healthy", latency: "2.2s", reqs: "15k", drift: 0.00, cost: "$890.00", logs: ["Summary generated", "Tokens: 4500"] },
-            { id: 12, name: "Churn Predictor", tech: "ML", model: "LogReg", status: "Healthy", latency: "20ms", reqs: "9M", drift: 0.01, cost: "$10.00", logs: ["Batch updated"] }
-        ];
+        // --- Configuration ---
+        const API_URL = "https://vm-service-claims-review-uiui.onrender.com/observe/metrics";
+        const REFRESH_RATE = 10000; // 10 seconds
 
+        // --- State ---
         let currentPersona = 'support';
-        let currentAppId = null;
+        let currentData = null; // Store full API response
+        let selectedAppId = null;
         let latencyChart = null;
         let costChart = null;
 
+        // --- Init ---
         window.onload = function() {
             initCharts();
-            renderTable();
-            setPersona('support');
-            selectApp(appsData[0]);
+            fetchData(); // Initial fetch
+            setInterval(fetchData, REFRESH_RATE); // Recurring fetch
         };
 
+        // --- Persona Logic ---
         function setPersona(persona) {
             currentPersona = persona;
             document.getElementById('btn-support').className = `persona-btn ${persona === 'support' ? 'active' : ''}`;
             document.getElementById('btn-exec').className = `persona-btn ${persona === 'exec' ? 'active' : ''}`;
-
-            const elements = document.querySelectorAll('.financial-element');
-            elements.forEach(el => {
-                if (persona === 'exec') el.classList.remove('financial-hidden');
-                else el.classList.add('financial-hidden');
-            });
-            // Re-render table to adjust layout if columns change
-            filterData();
+            
+            // Re-render to apply visibility rules based on new persona
+            if(currentData) renderDashboard(currentData);
         }
 
-        function renderTable(filteredData = appsData) {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+        // --- Data Fetching ---
+        async function fetchData() {
+            // Show loader only on first load if table is empty
+            const tableBody = document.getElementById('tableBody');
+            if(tableBody.children.length === 0) {
+                document.getElementById('tableLoader').classList.add('loading-active');
+            }
 
-            filteredData.forEach(app => {
-                const tr = document.createElement('tr');
-                if(currentAppId === app.id) tr.classList.add('selected-row');
-                tr.onclick = () => selectApp(app);
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("API Network response was not ok");
+                
+                const data = await response.json();
+                currentData = data; // Save to state
+                
+                renderDashboard(data);
+                
+                // Update timestamp
+                const now = new Date();
+                document.getElementById('lastUpdated').innerText = `Last update: ${now.toLocaleTimeString()}`;
+                
+                // Remove loader
+                document.getElementById('tableLoader').classList.remove('loading-active');
 
-                let statusBadge = app.status === 'Healthy' ? '<span class="status-pill st-ok">Healthy</span>' : 
-                                  app.status === 'Warning' ? '<span class="status-pill st-warn">Warning</span>' : 
-                                  '<span class="status-pill st-crit">Critical</span>';
+            } catch (error) {
+                console.error("Fetch error:", error);
+                // Optional: Fallback to mock data if API fails for demo purposes
+                // renderDashboard(mockFallbackData); 
+                document.getElementById('lastUpdated').innerText = `API Error - Retrying...`;
+            }
+        }
 
-                tr.innerHTML = `
-                    <td>
-                        <div class="app-cell">
-                            <div class="app-icon">${app.name.substring(0,2).toUpperCase()}</div>
-                            <div style="font-weight:500;">${app.name}</div>
-                        </div>
-                    </td>
-                    <td>${statusBadge}</td>
-                    <td>${app.tech}</td>
-                    <td>${app.latency}</td>
-                    <td>${app.reqs}</td>
-                    <td>${app.drift}</td>
-                    <td class="financial-element ${currentPersona === 'support' ? 'financial-hidden' : ''}">${app.cost}</td>
+        // --- Main Render Function ---
+        function renderDashboard(data) {
+            renderKPIs(data.meta.kpis);
+            renderTable(data.columns, data.rows);
+            
+            // Keep selection state or select first
+            if (selectedAppId) {
+                const app = data.rows.find(r => r.id === selectedAppId);
+                if(app) updateDetails(app);
+            } else if (data.rows.length > 0) {
+                selectApp(data.rows[0]);
+            }
+        }
+
+        function renderKPIs(kpis) {
+            const container = document.getElementById('kpiContainer');
+            container.innerHTML = '';
+
+            kpis.forEach(kpi => {
+                // Check financial permission
+                if (kpi.isFinancial && currentPersona !== 'exec') return;
+
+                const color = kpi.trendType === 'good' ? 'var(--accent-green)' : 
+                              kpi.trendType === 'warn' ? 'var(--accent-warning)' : 'var(--text-secondary)';
+
+                const div = document.createElement('div');
+                div.className = 'kpi-card';
+                div.innerHTML = `
+                    <div class="kpi-title">${kpi.title}</div>
+                    <div class="kpi-value">${kpi.value}</div>
+                    <div style="font-size:0.8rem; color:${color}; display:flex; align-items:center; gap:5px;">
+                        ${kpi.trend}
+                    </div>
                 `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTable(columns, rows) {
+            const thead = document.getElementById('tableHeaderRow');
+            const tbody = document.getElementById('tableBody');
+            
+            // 1. Build Headers (Dynamic)
+            thead.innerHTML = '';
+            columns.forEach(col => {
+                // Check visibility
+                if (col.type === 'financial' && currentPersona !== 'exec') return;
+                
+                const th = document.createElement('th');
+                th.innerText = col.label;
+                thead.appendChild(th);
+            });
+
+            // 2. Build Rows
+            tbody.innerHTML = '';
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                if(row.id === selectedAppId) tr.classList.add('selected-row');
+                tr.onclick = () => selectApp(row);
+
+                columns.forEach(col => {
+                    if (col.type === 'financial' && currentPersona !== 'exec') return;
+
+                    const td = document.createElement('td');
+                    
+                    // Render cell based on type
+                    if (col.type === 'identity') {
+                        td.innerHTML = `
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:30px; height:30px; background:#334155; border-radius:6px; display:flex; align-items:center; justify-content:center; color:white; font-size:0.75rem;">
+                                    ${row[col.key].substring(0,2).toUpperCase()}
+                                </div>
+                                <div style="font-weight:500;">${row[col.key]}</div>
+                            </div>`;
+                    } else if (col.type === 'status') {
+                        const status = row[col.key];
+                        const cls = status === 'Healthy' ? 'st-ok' : (status === 'Warning' ? 'st-warn' : 'st-crit');
+                        td.innerHTML = `<span class="status-pill ${cls}">${status}</span>`;
+                    } else {
+                        // Default text/number
+                        td.innerText = row[col.key] || '--';
+                        // Highlight high drift
+                        if (col.key === 'drift' && row[col.key] > 0.3) {
+                            td.style.color = 'var(--accent-red)';
+                            td.style.fontWeight = 'bold';
+                        }
+                    }
+                    tr.appendChild(td);
+                });
                 tbody.appendChild(tr);
             });
         }
 
-        function filterData() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const tech = document.getElementById('techFilter').value;
-            const filtered = appsData.filter(app => {
-                return app.name.toLowerCase().includes(search) && (tech === "All" || app.tech === tech);
-            });
-            renderTable(filtered);
+        // --- Interaction ---
+        function selectApp(app) {
+            selectedAppId = app.id;
+            updateDetails(app);
+            
+            // Re-highlight row
+            const rows = document.getElementById('tableBody').children;
+            Array.from(rows).forEach(r => r.classList.remove('selected-row'));
+            // Re-render usually handles class, but immediate feedback:
+            if(currentData) renderTable(currentData.columns, currentData.rows);
         }
 
-        function selectApp(app) {
-            currentAppId = app.id;
-            const rows = document.getElementById('tableBody').children;
-            Array.from(rows).forEach(row => {
-                row.classList.remove('selected-row');
-                if(row.innerHTML.includes(app.name)) row.classList.add('selected-row');
-            });
-
+        function updateDetails(app) {
             document.getElementById('detailName').innerText = app.name;
             document.getElementById('detailMeta').innerText = `${app.tech} | ${app.model}`;
 
+            // Handle Financial Chart Visibility
+            const costContainer = document.getElementById('costChartContainer');
+            if (currentPersona === 'exec') {
+                costContainer.classList.remove('financial-hidden');
+                updateCostChart(app);
+            } else {
+                costContainer.classList.add('financial-hidden');
+            }
+
+            // Logs
             const logContainer = document.getElementById('logsContainer');
             logContainer.innerHTML = '';
-            app.logs.forEach(log => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `<span class="log-ts">[${new Date().toLocaleTimeString()}]</span> ${log}`;
-                logContainer.appendChild(div);
-            });
+            if(app.logs && app.logs.length > 0) {
+                app.logs.forEach(log => {
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `<span style="color:#64748b; margin-right:8px;">></span> ${log}`;
+                    logContainer.appendChild(div);
+                });
+            } else {
+                logContainer.innerHTML = '<div class="log-item">No recent logs.</div>';
+            }
 
-            updateCharts(app);
+            // Charts
+            updateLatencyChart(app);
         }
 
-        function simulateDateUpdate() {
-            document.body.style.cursor = 'wait';
-            setTimeout(() => {
-                document.body.style.cursor = 'default';
-                if(currentAppId) selectApp(appsData.find(a => a.id === currentAppId));
-            }, 500);
-        }
-
+        // --- Chart Logic ---
         function initCharts() {
+            // Latency
             const ctxLat = document.getElementById('latencyChart').getContext('2d');
-            const ctxCost = document.getElementById('costChart').getContext('2d');
-
-            Chart.defaults.font.family = 'Inter';
-            Chart.defaults.color = '#64748b';
-            Chart.defaults.borderColor = '#334155';
-
             latencyChart = new Chart(ctxLat, {
                 type: 'line',
                 data: {
-                    labels: ['10:00', '10:15', '10:30', '10:45', '11:00', '11:15'],
+                    labels: ['T-50s', 'T-40s', 'T-30s', 'T-20s', 'T-10s', 'Now'],
                     datasets: [{
                         label: 'Latency (ms)',
-                        data: [],
+                        data: [0,0,0,0,0,0],
                         borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.3
+                        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                        fill: true, tension: 0.3
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: false, grid: { color: '#334155' } }, x: { grid: { display: false } } }
+                    scales: { 
+                        y: { grid: { color: '#334155' }, beginAtZero: false }, 
+                        x: { display: false } 
+                    }
                 }
             });
 
+            // Cost
+            const ctxCost = document.getElementById('costChart').getContext('2d');
             costChart = new Chart(ctxCost, {
                 type: 'bar',
                 data: {
                     labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
                     datasets: [{
-                        data: [],
+                        data: [0,0,0,0,0,0,0],
                         backgroundColor: '#8b5cf6',
                         borderRadius: 4
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { grid: { display: false } }, y: { grid: { color: '#334155' } } }
+                    scales: { x: { display: false }, y: { grid: { color: '#334155' } } }
                 }
             });
         }
 
-        function updateCharts(app) {
-            const baseLat = parseInt(app.latency) || 500;
-            const newData = Array.from({length: 6}, () => baseLat + (Math.random()*100 - 50));
-            latencyChart.data.datasets[0].data = newData;
+        function updateLatencyChart(app) {
+            // Simulate history based on current latency to make chart look alive
+            const base = parseInt(app.latency) || 500;
+            const data = Array.from({length: 6}, () => base + (Math.random()*100 - 50));
+            latencyChart.data.datasets[0].data = data;
             latencyChart.update();
+        }
 
-            const baseCost = parseInt(app.cost.replace(/[$,]/g, '')) / 7;
-            const newCost = Array.from({length: 7}, () => baseCost + (Math.random()*20));
-            costChart.data.datasets[0].data = newCost;
+        function updateCostChart(app) {
+            const base = parseInt((app.cost || "0").replace(/[$,]/g, '')) / 7;
+            const data = Array.from({length: 7}, () => base + (Math.random()*20));
+            costChart.data.datasets[0].data = data;
             costChart.update();
         }
+
     </script>
 </body>
 </html>

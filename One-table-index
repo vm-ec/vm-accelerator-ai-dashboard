@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Apps Observability (Dynamic)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f172a; --card-bg: #1e293b; --header-bg: #1e293b;
+            --text-primary: #f1f5f9; --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6; --accent-purple: #8b5cf6;
+            --accent-green: #10b981; --accent-red: #ef4444; --accent-warning: #f59e0b;
+            --border-color: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+        /* Header */
+        header { background-color: var(--header-bg); border-bottom: 1px solid var(--border-color); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .logo-box { width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; color: white; margin-right: 16px; }
+        .live-badge { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-green); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 8px; text-transform: uppercase; margin-left: 20px;}
+        .status-dot { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 100% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } }
+
+        .persona-selector { background-color: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; padding: 4px; display: flex; gap: 4px; }
+        .persona-btn { background: transparent; border: none; color: var(--text-secondary); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
+        .persona-btn.active { background-color: #334155; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* KPIs */
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 2rem; }
+        .kpi-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: opacity 0.3s; }
+        .kpi-title { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: white; margin-bottom: 4px; }
+
+        /* Layout */
+        .dashboard-grid { display: grid; grid-template-columns: 3fr 1.2fr; gap: 2rem; padding: 0 2rem 4rem 2rem; align-items: start; }
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: 1fr; } .details-wrapper { position: static !important; margin-top: 1rem; } }
+
+        /* Matrix */
+        .matrix-section { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; display: flex; flex-direction: column; width: 100%; position: relative; min-height: 200px; }
+        .table-scroll-wrapper { width: 100%; overflow-x: auto; }
+        table { width: 100%; min-width: 850px; border-collapse: collapse; font-size: 0.9rem; }
+        thead { background-color: #253248; }
+        th { text-align: left; padding: 1rem 1.25rem; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap; }
+        tr:hover { background-color: rgba(59, 130, 246, 0.05); cursor: pointer; }
+        tr.selected-row { background-color: rgba(59, 130, 246, 0.15); border-left: 3px solid var(--accent-blue); }
+
+        /* Helpers */
+        .financial-element { transition: opacity 0.3s; }
+        .financial-hidden { display: none !important; }
+        .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .st-ok { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .st-warn { background: rgba(245, 158, 11, 0.15); color: var(--accent-warning); }
+        .st-crit { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+        /* Loading Overlay */
+        .loading-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); display: flex; align-items: center; justify-content: center; z-index: 10; font-weight: 500; color: var(--accent-blue); backdrop-filter: blur(2px); transition: opacity 0.3s; pointer-events: none; opacity: 0; }
+        .loading-active { opacity: 1; pointer-events: all; }
+
+        /* Details Panel */
+        .details-wrapper { position: sticky; top: 100px; height: fit-content; }
+        .details-panel { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+        .logs-box { background-color: #0b1120; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; font-family: 'Courier New', monospace; font-size: 0.8rem; height: 200px; overflow-y: auto; color: #cbd5e1; }
+        .log-item { margin-bottom: 8px; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center;">
+        <div class="logo-box">AI</div>
+        <div>
+            <h1 style="font-size: 1.1rem; font-weight: 600;">AI Apps Observability</h1>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Dynamic Data Stream</div>
+        </div>
+        <div class="live-badge">
+            <div class="status-dot"></div> Live API
+        </div>
+        <div style="margin-left: 15px; font-size: 0.75rem; color: var(--text-secondary);" id="lastUpdated">
+            Last update: --
+        </div>
+    </div>
+
+    <div class="persona-selector">
+        <button class="persona-btn active" onclick="setPersona('support')" id="btn-support">Support</button>
+        <button class="persona-btn" onclick="setPersona('exec')" id="btn-exec">Executive</button>
+    </div>
+</header>
+
+<div class="kpi-container" id="kpiContainer">
+    <div style="color:var(--text-secondary);">Connecting to metrics stream...</div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="matrix-section">
+        <div class="loading-overlay" id="tableLoader">
+            <i class="ph ph-spinner ph-spin" style="margin-right:8px;"></i> Fetching Data...
+        </div>
+        <div class="table-scroll-wrapper">
+            <table id="appsTable">
+                <thead>
+                <tr id="tableHeaderRow">
+                </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="details-wrapper">
+        <div class="details-panel">
+            <div style="border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
+                <h2 id="detailName" style="font-size: 1.1rem; margin-bottom: 4px;">--</h2>
+                <div id="detailMeta" style="color: var(--text-secondary); font-size:0.85rem;">Select an app</div>
+            </div>
+
+            <div>
+                <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Live Latency</h3>
+                <div style="height: 150px; width: 100%;">
+                    <canvas id="latencyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="financial-element financial-hidden" id="costChartContainer">
+                <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Cost Analysis</h3>
+                <div style="height: 140px; width: 100%;">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; flex: 1;">
+                <h3 style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600;">Live Logs</h3>
+                <div class="logs-box" id="logsContainer">
+                    <div class="log-item">Waiting for data selection...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Configuration ---
+    const API_URL = "http://localhost:8082/metrics/dashboard";
+    const REFRESH_RATE = 10000; // 10 seconds
+
+    // --- State ---
+    let currentPersona = 'support';
+    let currentData = null; // Store full API response
+    let selectedAppId = null;
+    let latencyChart = null;
+    let costChart = null;
+
+    // --- Init ---
+    window.onload = function() {
+        initCharts();
+        fetchData(); // Initial fetch
+        setInterval(fetchData, REFRESH_RATE); // Recurring fetch
+    };
+
+    // --- Persona Logic ---
+    function setPersona(persona) {
+        currentPersona = persona;
+        document.getElementById('btn-support').className = `persona-btn ${persona === 'support' ? 'active' : ''}`;
+        document.getElementById('btn-exec').className = `persona-btn ${persona === 'exec' ? 'active' : ''}`;
+
+        // Re-render to apply visibility rules based on new persona
+        if(currentData) renderDashboard(currentData);
+    }
+
+    // --- Data Fetching ---
+    async function fetchData() {
+        // Show loader only on first load if table is empty
+        const tableBody = document.getElementById('tableBody');
+        if(tableBody.children.length === 0) {
+            document.getElementById('tableLoader').classList.add('loading-active');
+        }
+
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error("API Network response was not ok");
+
+            const data = await response.json();
+            currentData = data; // Save to state
+
+            renderDashboard(data);
+
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('lastUpdated').innerText = `Last update: ${now.toLocaleTimeString()}`;
+
+            // Remove loader
+            document.getElementById('tableLoader').classList.remove('loading-active');
+
+        } catch (error) {
+            console.error("Fetch error:", error);
+            // Optional: Fallback to mock data if API fails for demo purposes
+            // renderDashboard(mockFallbackData);
+            document.getElementById('lastUpdated').innerText = `API Error - Retrying...`;
+        }
+    }
+
+    // --- Main Render Function ---
+    function renderDashboard(data) {
+        renderKPIs(data.meta.kpis);
+        renderTable(data.columns, data.rows);
+
+        // Keep selection state or select first
+        if (selectedAppId) {
+            const app = data.rows.find(r => r.id === selectedAppId);
+            if(app) updateDetails(app);
+        } else if (data.rows.length > 0) {
+            selectApp(data.rows[0]);
+        }
+    }
+
+    function renderKPIs(kpis) {
+        const container = document.getElementById('kpiContainer');
+        container.innerHTML = '';
+
+        kpis.forEach(kpi => {
+            // Check financial permission
+            if (kpi.isFinancial && currentPersona !== 'exec') return;
+
+            const color = kpi.trendType === 'good' ? 'var(--accent-green)' :
+                          kpi.trendType === 'warn' ? 'var(--accent-warning)' : 'var(--text-secondary)';
+
+            const div = document.createElement('div');
+            div.className = 'kpi-card';
+            div.innerHTML = `
+                <div class="kpi-title">${kpi.title}</div>
+                <div class="kpi-value">${kpi.value}</div>
+                <div style="font-size:0.8rem; color:${color}; display:flex; align-items:center; gap:5px;">
+                    ${kpi.trend}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderTable(columns, rows) {
+        const thead = document.getElementById('tableHeaderRow');
+        const tbody = document.getElementById('tableBody');
+
+        // 1. Build Headers (Dynamic)
+        thead.innerHTML = '';
+        columns.forEach(col => {
+            // Check visibility
+            if (col.type === 'financial' && currentPersona !== 'exec') return;
+
+            const th = document.createElement('th');
+            th.innerText = col.label;
+            thead.appendChild(th);
+        });
+
+        // 2. Build Rows
+        tbody.innerHTML = '';
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            if(row.id === selectedAppId) tr.classList.add('selected-row');
+            tr.onclick = () => selectApp(row);
+
+            columns.forEach(col => {
+                if (col.type === 'financial' && currentPersona !== 'exec') return;
+
+                const td = document.createElement('td');
+
+                // Render cell based on type
+                if (col.type === 'identity') {
+                    td.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:30px; height:30px; background:#334155; border-radius:6px; display:flex; align-items:center; justify-content:center; color:white; font-size:0.75rem;">
+                                ${row[col.key].substring(0,2).toUpperCase()}
+                            </div>
+                            <div style="font-weight:500;">${row[col.key]}</div>
+                        </div>`;
+                } else if (col.type === 'status') {
+                    const status = row[col.key];
+                    const cls = status === 'Healthy' ? 'st-ok' : (status === 'Warning' ? 'st-warn' : 'st-crit');
+                    td.innerHTML = `<span class="status-pill ${cls}">${status}</span>`;
+                } else {
+                    // Default text/number
+                    td.innerText = row[col.key] || '--';
+                    // Highlight high drift
+                    if (col.key === 'drift' && row[col.key] > 0.3) {
+                        td.style.color = 'var(--accent-red)';
+                        td.style.fontWeight = 'bold';
+                    }
+                }
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- Interaction ---
+    function selectApp(app) {
+        selectedAppId = app.id;
+        updateDetails(app);
+
+        // Re-highlight row
+        const rows = document.getElementById('tableBody').children;
+        Array.from(rows).forEach(r => r.classList.remove('selected-row'));
+        // Re-render usually handles class, but immediate feedback:
+        if(currentData) renderTable(currentData.columns, currentData.rows);
+    }
+
+    function updateDetails(app) {
+        document.getElementById('detailName').innerText = app.name;
+        document.getElementById('detailMeta').innerText = `${app.tech} | ${app.model}`;
+
+        // Handle Financial Chart Visibility
+        const costContainer = document.getElementById('costChartContainer');
+        if (currentPersona === 'exec') {
+            costContainer.classList.remove('financial-hidden');
+            updateCostChart(app);
+        } else {
+            costContainer.classList.add('financial-hidden');
+        }
+
+        // Logs
+        const logContainer = document.getElementById('logsContainer');
+        logContainer.innerHTML = '';
+        if(app.logs && app.logs.length > 0) {
+            app.logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = `<span style="color:#64748b; margin-right:8px;">></span> ${log}`;
+                logContainer.appendChild(div);
+            });
+        } else {
+            logContainer.innerHTML = '<div class="log-item">No recent logs.</div>';
+        }
+
+        // Charts
+        updateLatencyChart(app);
+    }
+
+    // --- Chart Logic ---
+    function initCharts() {
+        // Latency
+        const ctxLat = document.getElementById('latencyChart').getContext('2d');
+        latencyChart = new Chart(ctxLat, {
+            type: 'line',
+            data: {
+                labels: ['T-50s', 'T-40s', 'T-30s', 'T-20s', 'T-10s', 'Now'],
+                datasets: [{
+                    label: 'Latency (ms)',
+                    data: [0,0,0,0,0,0],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    fill: true, tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#334155' }, beginAtZero: false },
+                    x: { display: false }
+                }
+            }
+        });
+
+        // Cost
+        const ctxCost = document.getElementById('costChart').getContext('2d');
+        costChart = new Chart(ctxCost, {
+            type: 'bar',
+            data: {
+                labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+                datasets: [{
+                    data: [0,0,0,0,0,0,0],
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { display: false }, y: { grid: { color: '#334155' } } }
+            }
+        });
+    }
+
+    function updateLatencyChart(app) {
+        // Simulate history based on current latency to make chart look alive
+        const base = parseInt(app.latency) || 500;
+        const data = Array.from({length: 6}, () => base + (Math.random()*100 - 50));
+        latencyChart.data.datasets[0].data = data;
+        latencyChart.update();
+    }
+
+    function updateCostChart(app) {
+        const base = parseInt((app.cost || "0").replace(/[$,]/g, '')) / 7;
+        const data = Array.from({length: 7}, () => base + (Math.random()*20));
+        costChart.data.datasets[0].data = data;
+        costChart.update();
+    }
+
+</script>
+</body>
+</html>

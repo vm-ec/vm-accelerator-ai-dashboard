@@ -285,4 +285,4 @@ The app uses CSS variables for theming (defined in `index.css`):
 
 ---
 
-**Built with** [Mocha](https://getmocha.com) | **License:** Private | **Version:** 0.0.1
+

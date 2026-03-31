@@ -52,7 +52,7 @@ export function TokenChart({ data }: TokenChartProps) {
         </div>
 
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={chartData}>
+          <BarChart data={chartData} key={JSON.stringify(chartData)}>
             <defs>
               <linearGradient id="inputGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#22D3EE" />
@@ -63,6 +63,7 @@ export function TokenChart({ data }: TokenChartProps) {
                 <stop offset="100%" stopColor="#8B5CF6" />
               </linearGradient>
             </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
             <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" />
             <YAxis stroke="rgba(255,255,255,0.3)" />
             <Tooltip content={<CustomTooltip />} />

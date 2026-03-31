@@ -83,6 +83,13 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: "Inter Variable", "Inter", system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  html {
+    font-size: 16px;
   }
 
   button:not([disabled]),

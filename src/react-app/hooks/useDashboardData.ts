@@ -31,8 +31,8 @@ export function useDashboardData() {
         if (tokenTable?.rows) {
           const geminiInput = tokenTable.rows.find((r: any) => r.name === "Gemini Input")?.value || 0;
           const geminiOutput = tokenTable.rows.find((r: any) => r.name === "Gemini Output")?.value || 0;
-          const openaiInput = tokenTable.rows.find((r: any) => r.name === "Openai Input")?.value || 0;
-          const openaiOutput = tokenTable.rows.find((r: any) => r.name === "Openai Output")?.value || 0;
+          const openaiInput = tokenTable.rows.find((r: any) => r.name === "Openai Input" || r.name === "OpenAI Input")?.value || 0;
+          const openaiOutput = tokenTable.rows.find((r: any) => r.name === "Openai Output" || r.name === "OpenAI Output")?.value || 0;
           
           tokenUsage.push(
             { name: "Gemini", input: geminiInput, output: geminiOutput },

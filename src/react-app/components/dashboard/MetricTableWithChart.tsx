@@ -1,4 +1,4 @@
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart, LabelList, LineChart, Line } from "recharts";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart, LabelList, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from "recharts";
 import type { MetricTable as MetricTableType } from "@/react-app/data/dashboardData";
 import { Badge } from "@/react-app/components/ui/badge";
 import {
@@ -48,14 +48,67 @@ function TableChart({ table, index }: { table: MetricTableType; index: number })
   const color = tableColors[table.title]?.primary || "#8B5CF6";
   
   if (table.isCustomTable && table.providers) {
-    const data = table.providers.map(p => ({ name: p.name, value: p.requests }));
+    // LLM Provider Metrics - Multi-dimensional chart
+    const chartData = table.providers.map(p => ({
+      name: p.name,
+      Requests: p.requests,
+      Latency: p.latency,
+      Errors: p.errors
+    }));
+    
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical">
-          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-          <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={60} />
-          <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", color: "hsl(var(--foreground))" }} />
-          <Bar dataKey="value" fill={color} radius={[0, 4, 4, 0]} />
+        <BarChart data={chartData}>
+          <defs>
+            <linearGradient id="requestsGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10B981" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#10B981" stopOpacity={0.6}/>
+            </linearGradient>
+            <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.6}/>
+            </linearGradient>
+            <linearGradient id="errorsGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#EF4444" stopOpacity={0.6}/>
+            </linearGradient>
+          </defs>
+          <XAxis 
+            dataKey="name" 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} 
+          />
+          <YAxis 
+            yAxisId="left"
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
+            label={{ value: 'Requests / Errors', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 } }}
+          />
+          <YAxis 
+            yAxisId="right"
+            orientation="right"
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
+            label={{ value: 'Latency (ms)', angle: 90, position: 'insideRight', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 10 } }}
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: "hsl(var(--card))", 
+              border: "1px solid hsl(var(--border))", 
+              borderRadius: "8px", 
+              color: "hsl(var(--foreground))" 
+            }}
+            formatter={(value: any, name: string) => {
+              if (name === 'Latency') return [value + ' ms', name];
+              return [value, name];
+            }}
+          />
+          <Bar yAxisId="left" dataKey="Requests" fill="url(#requestsGradient)" radius={[4, 4, 0, 0]} name="Requests" />
+          <Bar yAxisId="right" dataKey="Latency" fill="url(#latencyGradient)" radius={[4, 4, 0, 0]} name="Latency" />
+          <Bar yAxisId="left" dataKey="Errors" fill="url(#errorsGradient)" radius={[4, 4, 0, 0]} name="Errors" />
         </BarChart>
       </ResponsiveContainer>
     );
@@ -76,6 +129,44 @@ function TableChart({ table, index }: { table: MetricTableType; index: number })
   }
 
   const rows = table.rows || [];
+  
+  // Special handling for Token Metrics - group by provider
+  if (table.title === "Token Metrics") {
+    const providers: Record<string, { name: string; input: number; output: number }> = {};
+    
+    rows.forEach(row => {
+      const value = typeof row.value === "string" ? parseFloat(row.value.replace(/[$,]/g, "")) || 0 : row.value;
+      
+      if (row.name.includes("Input")) {
+        const provider = row.name.replace(" Input", "").replace("Openai", "OpenAI");
+        if (!providers[provider]) providers[provider] = { name: provider, input: 0, output: 0 };
+        providers[provider].input = value;
+      } else if (row.name.includes("Output")) {
+        const provider = row.name.replace(" Output", "").replace("Openai", "OpenAI");
+        if (!providers[provider]) providers[provider] = { name: provider, input: 0, output: 0 };
+        providers[provider].output = value;
+      }
+    });
+    
+    const chartData = Object.values(providers);
+    
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData}>
+          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }} 
+            itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+            labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+          />
+          <Bar dataKey="input" fill="#22D3EE" name="Input" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="output" fill="#A78BFA" name="Output" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
+  
   let chartData = rows.map(r => ({ 
     name: r.name.replace(/^(Gemini |Openai |OpenAI )/, "").slice(0, 12), 
     value: typeof r.value === "string" ? parseFloat(r.value.replace(/[$,]/g, "")) || 0 : r.value,
@@ -112,8 +203,50 @@ function TableChart({ table, index }: { table: MetricTableType; index: number })
     );
   }
 
-  // Error/Latency - Area Chart
-  if (table.title.includes("Error") || table.title.includes("Latency") || table.title.includes("Kafka")) {
+  // Error Metrics - Radar Chart
+  if (table.title.includes("Error")) {
+    const errorChartData = rows.map(r => ({
+      name: r.name.replace(" Errors", "").replace("Openai", "OpenAI"),
+      value: typeof r.value === "string" ? parseFloat(r.value.replace(/[$,]/g, "")) || 0 : r.value,
+      fullName: r.name
+    }));
+    
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={errorChartData}>
+          <PolarGrid stroke="rgba(255,255,255,0.1)" />
+          <PolarAngleAxis 
+            dataKey="name" 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
+          />
+          <PolarRadiusAxis 
+            angle={90} 
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} 
+          />
+          <Radar 
+            name="Errors" 
+            dataKey="value" 
+            stroke="#EF4444" 
+            fill="#EF4444" 
+            fillOpacity={0.6}
+            dot={{ r: 4, fill: "#EF4444", strokeWidth: 2, stroke: "#DC2626" }}
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: "hsl(var(--card))", 
+              border: "1px solid hsl(var(--border))", 
+              borderRadius: "8px", 
+              color: "hsl(var(--foreground))" 
+            }}
+            formatter={(value, name, props) => [value + ' errors', props.payload.fullName || name]}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    );
+  }
+  
+  // Latency/Kafka - Area Chart
+  if (table.title.includes("Latency") || table.title.includes("Kafka")) {
     return (
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData}>

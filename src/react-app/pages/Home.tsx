@@ -68,7 +68,7 @@ export default function HomePage() {
       <div className="relative z-10">
         {/* Header */}
         <header className="border-b border-white/5 backdrop-blur-xl bg-background/60 sticky top-0 z-20">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {/* Logo */}
@@ -139,10 +139,10 @@ export default function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-[1600px] mx-auto px-6 py-8">
+        <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* KPI Cards */}
-          <section className="mb-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <section className="mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {dashboardData.meta.kpis.map((kpi) => (
                 <KPICard key={kpi.id} {...kpi} />
               ))}
@@ -150,17 +150,17 @@ export default function HomePage() {
           </section>
 
           {/* Charts Row - 3 columns */}
-          <section className="mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              <TokenChart data={dashboardData.tokenUsage} />
+          <section className="mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              <TokenChart key={JSON.stringify(dashboardData.tokenUsage)} data={dashboardData.tokenUsage} />
               <ModelDistributionChart data={dashboardData.modelDistribution} />
               <LatencyFeed initialData={dashboardData.latencyFeed} />
             </div>
           </section>
 
           {/* Cost & Logs Row */}
-          <section className="mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <section className="mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
               <CostChart data={dashboardData.costData} />
               <EventLog />
             </div>
@@ -169,11 +169,11 @@ export default function HomePage() {
           {/* Detailed Metrics Section */}
           {viewMode === "support" && (
             <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-xl font-bold text-foreground">Detailed Metrics</h2>
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Detailed Metrics</h2>
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
               </div>
-              <div className="grid grid-cols-1 gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:gap-5">
                 {dashboardData.metricTables.map((table, index) => (
                   <MetricTableWithChart key={index} table={table} index={index} />
                 ))}
@@ -184,11 +184,11 @@ export default function HomePage() {
           {/* Quick Stats for Executive View */}
           {viewMode === "executive" && (
             <section>
-              <div className="flex items-center gap-3 mb-6">
-                <h2 className="text-xl font-bold text-foreground">Provider Overview</h2>
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Provider Overview</h2>
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
                 {/* LLM Provider Metrics */}
                 {dashboardData.metricTables
                   .filter(t => t.title === "LLM Provider Metrics" || t.title === "Error Metrics")
@@ -201,8 +201,8 @@ export default function HomePage() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-white/5 mt-12">
-          <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <footer className="border-t border-white/5 mt-8 sm:mt-12">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>© 2025 AI Apps Observability Dashboard</span>
               <div className="flex items-center gap-2">
